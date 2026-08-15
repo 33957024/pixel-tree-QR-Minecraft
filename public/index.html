@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chroma Tree · 彩叶二维码</title>
+<style>
+  :root {
+    --paper-1: #ece8d9;
+    --paper-2: #f1e8cf;
+    --paper-3: #e5d6b7;
+    --ink: #3b3529;
+    --muted: #8a806c;
+    --line: #ddd4c0;
+    --card: #fffdf6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: linear-gradient(var(--paper-1), var(--paper-2) 40%, var(--paper-3));
+    min-height: 100vh;
+    color: var(--ink);
+    padding: 40px 16px;
+  }
+  .shell { max-width: 720px; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 26px; }
+  .eyebrow { color: #d4687f; letter-spacing: 3px; font-size: 12px; margin-bottom: 12px; }
+  .eyebrow::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #d4687f; margin-right: 8px; vertical-align: 1px; }
+  h1 { font-size: 32px; font-weight: 700; letter-spacing: 1px; margin-bottom: 8px; }
+  .sub { color: var(--muted); font-size: 14px; }
+
+  .stage {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 32px rgba(60, 50, 30, .08);
+    margin-bottom: 22px;
+  }
+  .toolbar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 16px; border-bottom: 1px solid var(--line);
+  }
+  .stage-label { font-size: 12px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+  .toggle {
+    border: 1px solid var(--line); background: #fff; border-radius: 999px;
+    padding: 6px 13px; cursor: pointer; font-size: 13px; color: var(--ink);
+    transition: border-color .15s, background .15s;
+  }
+  .toggle:hover { border-color: var(--ink); }
+  .canvas-wrap {
+    display: flex; justify-content: center; align-items: center;
+    padding: 0; min-height: 320px;
+    background: linear-gradient(var(--paper-1), var(--paper-2) 62%, var(--paper-3));
+  }
+  .canvas-wrap canvas { display: block; max-width: 100%; height: auto; }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 12px 32px rgba(60, 50, 30, .08);
+  }
+  .field-label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px; }
+  input[type=text] {
+    width: 100%; padding: 12px 14px; font-size: 15px;
+    border: 1px solid var(--line); border-radius: 10px; margin-bottom: 18px;
+    outline: none; background: #fff; color: var(--ink);
+    transition: border-color .15s;
+  }
+  input[type=text]:focus { border-color: #d4687f; }
+  legend { font-size: 13px; color: var(--muted); padding: 0 6px; margin-bottom: 10px; }
+  .themes { display: flex; gap: 10px; flex-wrap: wrap; }
+  .theme {
+    display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px;
+    border: 1px solid var(--line); border-radius: 999px; background: #fff;
+    cursor: pointer; font-size: 13px; color: var(--ink);
+    transition: border-color .15s, transform .1s;
+  }
+  .theme:hover { border-color: var(--ink); }
+  .theme.active { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+  .swatch { width: 15px; height: 15px; border-radius: 50%; display: inline-block; }
+  .swatch.cherry  { background: #f4b2cc; }
+  .swatch.summer  { background: #91c96a; }
+  .swatch.ginkgo  { background: #f4d94e; }
+  .swatch.rainbow { background: conic-gradient(#f58fbd, #ef5350, #f7943d, #f2d54a, #54c7c2, #4fa66d, #f58fbd); }
+
+  .actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+  .actions a {
+    flex: 1 1 0; text-align: center; padding: 11px 14px; border-radius: 10px;
+    font-size: 14px; text-decoration: none; color: var(--ink);
+    border: 1px solid var(--line); background: #fff; white-space: nowrap;
+    transition: background .15s, border-color .15s;
+  }
+  .actions a:hover { border-color: var(--ink); }
+  .actions a.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .actions a.primary:hover { background: #4a4234; }
+
+  footer { text-align: center; margin-top: 22px; font-size: 12px; color: var(--muted); }
+  footer .sep { margin: 0 8px; opacity: .5; }
+
+  /* 自定义配色弹窗 */
+  .swatch.custom { background: linear-gradient(90deg, #ef5350, #f2d54a, #4fa66d, #54c7c2); }
+  .modal { position: fixed; inset: 0; background: rgba(40,32,20,.42); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
+  .modal.open { display: flex; }
+  .modal-card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 24px; width: 100%; max-width: 460px; box-shadow: 0 20px 60px rgba(40,32,20,.28); }
+  .modal-card h2 { font-size: 20px; margin-bottom: 4px; }
+  .modal-card .hint { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+  .track-label { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .track-label .count { font-size: 12px; color: var(--muted); }
+  .track { height: 26px; border-radius: 8px; border: 1px solid var(--line); margin-bottom: 10px; overflow: hidden; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; min-height: 34px; }
+  .custom-swatch { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--line); cursor: pointer; position: relative; }
+  .custom-swatch:hover::after { content: "×"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; background: rgba(0,0,0,.35); border-radius: 8px; }
+  .add-row { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; }
+  .add-row input[type=color] { width: 42px; height: 42px; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: #fff; cursor: pointer; flex: none; }
+  .add-row input[type=text] { flex: 1; padding: 10px 12px; font-size: 14px; border: 1px solid var(--line); border-radius: 8px; margin: 0; font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; }
+  .add-row button { padding: 10px 16px; border: 1px solid var(--ink); background: var(--ink); color: #fff; border-radius: 8px; cursor: pointer; font-size: 14px; flex: none; }
+  .gradient-opt { display: flex; align-items: center; gap: 8px; font-size: 14px; margin: 4px 0; cursor: pointer; user-select: none; }
+  .gradient-opt input { width: 16px; height: 16px; }
+  .gradient-opt .dim { color: var(--muted); font-size: 12px; }
+  .error { color: #c0392b; font-size: 13px; min-height: 18px; margin: 8px 0 4px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 6px; }
+  .modal-actions button { padding: 10px 18px; border: 1px solid var(--line); background: #fff; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  .modal-actions .primary-btn { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  .toolbar-actions { display: flex; gap: 8px; }
+
+  /* 选择对应方块 */
+  .block-map { display: flex; flex-direction: column; gap: 10px; }
+  .block-row { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+  .color-dot { width: 20px; height: 20px; border-radius: 5px; border: 1px solid var(--line); flex: none; }
+  .block-row .hex { font-family: ui-monospace, Consolas, monospace; font-size: 13px; width: 82px; }
+  .block-row .arrow { color: var(--muted); }
+  .block-pick { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: #fff; cursor: pointer; font-size: 13px; color: var(--ink); }
+  .block-pick:hover { border-color: var(--ink); }
+  .block-icon { width: 16px; height: 16px; border-radius: 3px; border: 1px solid rgba(0,0,0,.15); display: inline-block; flex: none; }
+
+  /* 方块选择下拉 */
+  .block-modal-card { max-width: 480px; }
+  #block-search { width: 100%; padding: 10px 12px; font-size: 14px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 12px; outline: none; }
+  #block-search:focus { border-color: #d4687f; }
+  .block-list { max-height: 340px; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; }
+  .block-option { display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; font-size: 14px; }
+  .block-option:hover { background: #f4efe4; }
+  .block-option .bname { flex: 1; }
+  .block-option code { font-size: 11px; color: var(--muted); }
+  .block-empty { padding: 16px; text-align: center; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div class="eyebrow">CHROMA TREE · 彩叶二维码</div>
+      <h1>种下一个链接</h1>
+      <p class="sub">输入完整网址，下方会实时生成对应的树。点击「查看二维码」可俯视并扫描。</p>
+    </header>
+
+    <section class="stage">
+      <div class="toolbar">
+        <span class="stage-label" id="stage-label">樱花树</span>
+        <div class="toolbar-actions">
+          <button type="button" class="toggle" id="toggle"><span>⌗</span> 查看二维码</button>
+        </div>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="preview" role="img" aria-label="二维码树"></canvas>
+      </div>
+    </section>
+
+    <section class="panel">
+      <label class="field-label" for="url">想种下什么链接？</label>
+      <input type="text" id="url" placeholder="https://example.com" inputmode="url" spellcheck="false" value="https://openai.com">
+
+      <fieldset style="border: none;">
+        <legend>选择树叶颜色</legend>
+        <div class="themes">
+          <button type="button" class="theme active" data-theme="cherry"><span class="swatch cherry"></span>樱花粉</button>
+          <button type="button" class="theme" data-theme="summer"><span class="swatch summer"></span>夏日绿</button>
+          <button type="button" class="theme" data-theme="ginkgo"><span class="swatch ginkgo"></span>银杏黄</button>
+          <button type="button" class="theme" data-theme="rainbow"><span class="swatch rainbow"></span>渐变彩虹</button>
+          <button type="button" class="theme" data-theme="custom"><span class="swatch custom"></span>自定义配色</button>
+        </div>
+      </fieldset>
+
+      <fieldset style="border: none; margin-top: 18px;">
+        <legend>选择对应方块</legend>
+        <div class="block-map" id="block-map"></div>
+      </fieldset>
+
+      <div class="actions">
+        <a class="primary" id="download" href="#">下载当前视图</a>
+        <a id="download-flat" href="#">下载可扫描二维码</a>
+        <a id="download-projection" href="#">下载投影文件</a>
+      </div>
+    </section>
+
+    <footer>
+      <span>每片颜色，都是二维码的一部分</span>
+      <span class="sep">·</span>
+      <span>俯视图（查看二维码）即可扫描</span>
+    </footer>
+  </main>
+
+  <div class="modal" id="custom-modal">
+    <div class="modal-card">
+      <h2>自定义配色</h2>
+      <p class="hint">颜色从下到上铺在叶片上，最多 6 种。</p>
+
+      <div class="track-label">
+        <span class="field-label" style="margin:0">颜色轨道</span>
+        <span class="count" id="custom-count">3 / 6</span>
+      </div>
+      <div class="track" id="custom-track"></div>
+      <div class="swatches" id="custom-swatches"></div>
+
+      <label class="field-label">添加颜色（点击色块可移除）</label>
+      <div class="add-row">
+        <input type="color" id="custom-picker" value="#65D97D">
+        <input type="text" id="custom-hex" placeholder="#65D97D" maxlength="7" spellcheck="false">
+        <button type="button" id="custom-add">添加</button>
+      </div>
+
+      <label class="gradient-opt">
+        <input type="checkbox" id="custom-gradient" checked>
+        <span>渐变过渡</span>
+        <span class="dim">（不勾选则颜色之间直接分块应用）</span>
+      </label>
+
+      <p class="error" id="custom-error"></p>
+
+      <div class="modal-actions">
+        <button type="button" id="custom-cancel">取消</button>
+        <button type="button" id="custom-apply" class="primary-btn">应用</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="block-modal">
+    <div class="modal-card block-modal-card">
+      <h2>选择方块</h2>
+      <input type="text" id="block-search" placeholder="搜索方块名称或 id（如：染色玻璃 / white_stained_glass）" spellcheck="false">
+      <div class="block-list" id="block-list"></div>
+    </div>
+  </div>
+
+  <script src="/blocks.js"></script>
+  <script src="/vendor/qrcode.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

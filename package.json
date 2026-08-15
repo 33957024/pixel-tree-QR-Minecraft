@@ -1,0 +1,34 @@
+{
+  "name": "pixel-tree-qr",
+  "version": "1.0.0",
+  "description": "Turn any URL into a scannable 'pixel tree' QR code: coloured leaf circles + a brown trunk, rendered as PNG.",
+  "main": "index.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=16"
+  },
+  "scripts": {
+    "start": "node index.js serve",
+    "serve": "node index.js serve",
+    "cli": "node index.js",
+    "build": "node build-standalone.js",
+    "test": "node test.js"
+  },
+  "keywords": [
+    "qr-code",
+    "qr",
+    "canvas",
+    "node-canvas",
+    "tree",
+    "pixel-tree"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@napi-rs/canvas": "^1.0.6",
+    "express": "^4.19.2",
+    "qrcode-generator": "^1.4.4"
+  },
+  "devDependencies": {
+    "jsqr": "^1.4.0"
+  }
+}
