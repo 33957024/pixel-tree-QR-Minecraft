@@ -1,8 +1,11 @@
 # pixel-tree-qr 🎄
 
 本项目完全使用deepseek v4 pro + cc-switch 生成，不太会有维护
+
 使用请去release下载pixel-tree.html这一个文件就行
+
 要克隆到本地的 node_modules.zip 记得自己解压一下就行了
+
 26.2投影打开正常，其他版本有问题留个Issues
 
 把任意链接「种」成一棵彩色叶片树（参考 [Chroma Tree](https://6cls.com/chroma-tree)）：二维码被渲染成一棵 **等距视角的立体树** —— 树冠由彩色叶片方块堆叠而成，中央有树干，地面铺着二维码本体。
